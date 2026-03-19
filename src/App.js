@@ -12,11 +12,7 @@ function App() {
 
   const pricePer1000L = 10;
 
-  const calculatePrice = (litres) => {
-    const base = (litres / 1000) * pricePer1000L;
-    return form.urgency === "Urgent" ? base * 1.5 : base;
-  };
-
+  
   const handleSubmit = () => {
     if (!form.name || !form.location || !form.litres) return;
 
