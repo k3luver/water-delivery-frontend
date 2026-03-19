@@ -1,5 +1,12 @@
+import { useState, useEffect } from "react";
+
 function App() {
   const [orders, setOrders] = useState([]);
+ useEffect(() => {
+  fetch("https://express-js-on-vercel-7c96.onrender.com/orders")
+    .then((res) => res.json())
+    .then((data) => setOrders(data));
+}, []);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -15,28 +22,45 @@ function App() {
     return form.urgency === "Urgent" ? base * 1.5 : base;
   };
 
-  const handleSubmit = () => {
-    if (!form.name || !form.location || !form.litres) return;
+  const handleSubmit = async () => {
+  if (!form.name || !form.location || !form.litres) return;
 
-    const newOrder = {
-      ...form,
-      id: Date.now(),
-      status: "Pending",
-      price: calculatePrice(Number(form.litres)),
-    };
+  const res = await fetch("https://express-js-on-vercel-7c96.onrender.com/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(form),
+  });
 
-    setOrders([newOrder, ...orders]);
+  const data = await res.json();
 
-    setForm({
-      name: "",
-      phone: "",
-      location: "",
-      litres: "",
-      urgency: "Normal",
-    });
-  };
+  setOrders([data, ...orders]);
 
-  const updateStatus = (id, status) => {
+  setForm({
+    name: "",
+    phone: "",
+    location: "",
+    litres: "",
+    urgency: "Normal",
+  });
+};
+
+ const updateStatus = async (id, status) => {
+  await fetch(`https://express-js-on-vercel-7c96.onrender.com/orders/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  setOrders(
+    orders.map((o) =>
+      o.id === id ? { ...o, status } : o
+    )
+  );
+};
     setOrders(
       orders.map((o) => (o.id === id ? { ...o, status } : o))
     );
