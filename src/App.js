@@ -2,11 +2,6 @@ import { useState, useEffect } from "react";
 
 function App() {
   const [orders, setOrders] = useState([]);
- useEffect(() => {
-  fetch("https://express-js-on-vercel-7c96.onrender.com/orders")
-    .then((res) => res.json())
-    .then((data) => setOrders(data));
-}, []);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -17,53 +12,64 @@ function App() {
 
   const pricePer1000L = 10;
 
+  useEffect(() => {
+    fetch("https://express-js-on-vercel-7c96.onrender.com/orders")
+      .then((res) => res.json())
+      .then((data) => setOrders(data))
+      .catch((err) => console.error("Error loading orders:", err));
+  }, []);
+
   const calculatePrice = (litres) => {
     const base = (litres / 1000) * pricePer1000L;
     return form.urgency === "Urgent" ? base * 1.5 : base;
   };
 
   const handleSubmit = async () => {
-  if (!form.name || !form.location || !form.litres) return;
+    if (!form.name || !form.location || !form.litres) return;
 
-  const res = await fetch("https://express-js-on-vercel-7c96.onrender.com/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(form),
-  });
+    try {
+      const res = await fetch("https://express-js-on-vercel-7c96.onrender.com/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-  const data = await res.json();
+      const data = await res.json();
 
-  setOrders([data, ...orders]);
+      setOrders([data, ...orders]);
 
-  setForm({
-    name: "",
-    phone: "",
-    location: "",
-    litres: "",
-    urgency: "Normal",
-  });
-};
+      setForm({
+        name: "",
+        phone: "",
+        location: "",
+        litres: "",
+        urgency: "Normal",
+      });
+    } catch (err) {
+      console.error("Error creating order:", err);
+    }
+  };
 
- const updateStatus = async (id, status) => {
-  await fetch(`https://express-js-on-vercel-7c96.onrender.com/orders/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
+  const updateStatus = async (id, status) => {
+    try {
+      await fetch(`https://express-js-on-vercel-7c96.onrender.com/orders/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
 
-  setOrders(
-    orders.map((o) =>
-      o.id === id ? { ...o, status } : o
-    )
-  );
-};
-    setOrders(
-      orders.map((o) => (o.id === id ? { ...o, status } : o))
-    );
+      setOrders(
+        orders.map((o) =>
+          o.id === id ? { ...o, status } : o
+        )
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
   };
 
   return (
@@ -121,7 +127,7 @@ function App() {
           <p>{order.phone}</p>
           <p>{order.location}</p>
           <p>{order.litres}L</p>
-          <p>${order.price.toFixed(2)}</p>
+          <p>${Number(order.price || 0).toFixed(2)}</p>
           <p>Status: {order.status}</p>
 
           <button onClick={() => updateStatus(order.id, "En Route")}>
