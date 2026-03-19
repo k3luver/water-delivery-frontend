@@ -33,8 +33,10 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
-      });
+        body: JSON.stringify({
+  ...form,
+  price: calculatePrice(Number(form.litres)),
+}),
 
       const data = await res.json();
 
