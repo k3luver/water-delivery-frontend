@@ -12,32 +12,64 @@ function App() {
 
   const pricePer1000L = 10;
 
-  
-  const handleSubmit = () => {
-    if (!form.name || !form.location || !form.litres) return;
-
-    const newOrder = {
-      ...form,
-      id: Date.now(),
-      status: "Pending",
-      price: calculatePrice(Number(form.litres)),
-    };
-
-    setOrders([newOrder, ...orders]);
-
-    setForm({
-      name: "",
-      phone: "",
-      location: "",
-      litres: "",
-      urgency: "Normal",
-    });
+  const calculatePrice = (litres) => {
+    const base = (litres / 1000) * pricePer1000L;
+    return form.urgency === "Urgent" ? base * 1.5 : base;
   };
 
-  const updateStatus = (id, status) => {
-    setOrders(
-      orders.map((o) => (o.id === id ? { ...o, status } : o))
-    );
+  useEffect(() => {
+    fetch("https://express-js-on-vercel-7c96.onrender.com/orders")
+      .then((res) => res.json())
+      .then((data) => setOrders(data))
+      .catch((err) => console.error("Error loading orders:", err));
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.location || !form.litres) return;
+
+    try {
+      const res = await fetch("https://express-js-on-vercel-7c96.onrender.com/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...form,
+          price: calculatePrice(Number(form.litres)),
+        }),
+      });
+
+      const data = await res.json();
+      setOrders([data, ...orders]);
+
+      setForm({
+        name: "",
+        phone: "",
+        location: "",
+        litres: "",
+        urgency: "Normal",
+      });
+    } catch (err) {
+      console.error("Error creating order:", err);
+    }
+  };
+
+  const updateStatus = async (id, status) => {
+    try {
+      await fetch(`https://express-js-on-vercel-7c96.onrender.com/orders/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      setOrders(
+        orders.map((o) => (o.id === id ? { ...o, status } : o))
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
   };
 
   return (
@@ -95,7 +127,7 @@ function App() {
           <p>{order.phone}</p>
           <p>{order.location}</p>
           <p>{order.litres}L</p>
-          <p>${order.price.toFixed(2)}</p>
+          <p>${Number(order.price || 0).toFixed(2)}</p>
           <p>Status: {order.status}</p>
 
           <button onClick={() => updateStatus(order.id, "En Route")}>
